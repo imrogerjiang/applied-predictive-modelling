@@ -1,3 +1,14 @@
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.cross_decomposition import PLSRegression
+from sklearn.model_selection import train_test_split
+from sklearn import linear_model
+from scipy.stats import boxcox
+from scipy.special import inv_boxcox
+from scipy.stats import norm
+
 def qq_plot(x):
     """
     Plots against a standard normal distribution.
@@ -46,7 +57,7 @@ def boxcox_transform(df, lambdas=None):
         bc = pd.concat([bc, a], axis="columns")
     return bc, bc_lambdas
 
-def pca(ds, boxcox=False):
+def pca(ds, boxcox=False, max_components=None):
     """
     Applies principle component regression to find R2 of test dataset.
     
@@ -64,6 +75,7 @@ def pca(ds, boxcox=False):
             "y_test": target values of testing set
         }
         arg2 (bool): whether Box Cox transformation is to be applied to predictor variables.
+        arg3 (int): maximum number of components used in pca
     
     Returns:
         float: R2 value from applying the model trained train_val on test.
@@ -79,7 +91,8 @@ def pca(ds, boxcox=False):
     else:
         ds_bc = ds
     
-    for n_components in range(1, min(ds_bc["x_train"].shape)-1):
+    if max_components is None: max_components=min(ds_bc["x_train"].shape)-1
+    for n_components in range(1, max_components):
         pca_x = {}
         pca = PCA(n_components=n_components)
         ols_pca = linear_model.LinearRegression()
@@ -99,7 +112,7 @@ def pca(ds, boxcox=False):
 
     return ols_pca.score(pca_x["test"], ds["y_test"])
 
-def pls(ds, boxcox=False):
+def pls(ds, boxcox=False, max_components=None):
     """
     Applies partial least squares to find R2 of test dataset.
     
@@ -117,6 +130,7 @@ def pls(ds, boxcox=False):
             "y_test": target values of testing set
         }
         arg2 (bool): whether Box Cox transformation is to be applied to predictor variables.
+        arg3 (int): maximum number of components used in pca
     
     Returns:
         float: R2 value from applying the model trained train_val on test.
@@ -132,10 +146,9 @@ def pls(ds, boxcox=False):
     else:
         ds_bc = ds
     
-    for n_components in range(1, min(ds_bc["x_train"].shape)-1):
+    if max_components is None: max_components=min(ds_bc["x_train"].shape)-1
+    for n_components in range(1, max_components):
         pls = PLSRegression(n_components=n_components)
-        ols_pls = linear_model.LinearRegression()
-
         pls_x = {}
         pls.fit(ds_bc["x_train"], ds["y_train"])
         pls_scores.append(pls.score(X=ds_bc["x_val"], y=ds["y_val"]))
