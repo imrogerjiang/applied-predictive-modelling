@@ -57,6 +57,18 @@ def boxcox_transform(df, lambdas=None):
         bc = pd.concat([bc, a], axis="columns")
     return bc, bc_lambdas
 
+def ols(ds, boxcox=False):
+    if boxcox:
+        ds_bc = {}
+        ds_bc["x_train_val"], lambdas = boxcox_transform(ds["x_train_val"])
+        ds_bc["x_test"], _ = boxcox_transform(ds["x_test"], lambdas=lambdas)
+    else:
+        ds_bc = ds
+    ols = linear_model.LinearRegression()
+    ols.fit(X=ds["x_train_val"], y=ds["y_train_val"])
+    return ols.score(X=ds["x_test"], y=ds["y_test"])
+
+
 def pca(ds, boxcox=False, max_components=None):
     """
     Applies principle component regression to find R2 of test dataset.
